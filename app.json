@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "Burmese Checker",
+    "slug": "burmese-checker",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "plugins": [
+      [
+        "expo-navigation-bar",
+        {
+          "visibility": "hidden",
+          "barStyle": "light",
+          "enforceContrast": false
+        }
+      ]
+    ],
+    "android": {
+      "package": "com.minthangml.burmesechecker"
+    }
+  }
+}

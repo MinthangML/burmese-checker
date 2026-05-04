@@ -10,6 +10,7 @@ export function PlayerStrip({
   pulseScale,
   pulseOpacity,
   labels,
+  textComponent: TextComponent = Text,
   style,
 }) {
   const highlight = isActive || isWinner;
@@ -36,16 +37,20 @@ export function PlayerStrip({
           />
 
           <View>
-            <Text style={styles.playerSeat}>{theme.seat}</Text>
-            <Text style={[styles.playerName, { color: theme.accent }]}>
+            <TextComponent style={styles.playerSeat}>{theme.seat}</TextComponent>
+            <TextComponent style={[styles.playerName, { color: theme.accent }]}>
               {theme.label}
-            </Text>
+            </TextComponent>
           </View>
         </View>
 
         <View style={styles.playerCount}>
-          <Text style={styles.playerCountValue}>{remainingPieces}</Text>
-          <Text style={styles.playerCountLabel}>{piecesLabel}</Text>
+          <TextComponent style={styles.playerCountValue}>
+            {remainingPieces}
+          </TextComponent>
+          <TextComponent style={styles.playerCountLabel}>
+            {piecesLabel}
+          </TextComponent>
         </View>
       </View>
 
@@ -66,7 +71,7 @@ export function PlayerStrip({
         ))}
       </View>
 
-      <Text
+      <TextComponent
         style={[
           styles.playerMetaText,
           styles.seatState,
@@ -75,16 +80,18 @@ export function PlayerStrip({
         ]}
       >
         {stateLabel}
-      </Text>
+      </TextComponent>
     </View>
   );
 }
 
-export function InfoSection({ label, value, accent, style }) {
+export function InfoSection({ label, value, accent, textComponent: TextComponent = Text, style }) {
   return (
     <View style={[styles.infoSection, style]}>
-      <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={[styles.infoValue, accent && { color: accent }]}>{value}</Text>
+      <TextComponent style={styles.infoLabel}>{label}</TextComponent>
+      <TextComponent style={[styles.infoValue, accent && { color: accent }]}>
+        {value}
+      </TextComponent>
     </View>
   );
 }

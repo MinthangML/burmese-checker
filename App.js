@@ -1,17 +1,19 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
+  BackHandler,
   Easing,
   Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
-  Text,
+  Text as RNText,
   TextInput,
   useWindowDimensions,
   View,
 } from "react-native";
 import * as NavigationBar from "expo-navigation-bar";
+import { useFonts } from "expo-font";
 import { StatusBar } from "expo-status-bar";
 import { AI_DIFFICULTIES, chooseAiTurn } from "./ai";
 import {
@@ -22,8 +24,10 @@ import {
   getAllLegalMoves,
   getCaptureMoves,
   getLegalMovesForPiece,
+  getOpponent,
   PLAYERS,
 } from "./logic";
+import { setAudioModeAsync, useAudioPlayer } from "expo-audio";
 import {
   clearSavedOnlineSession,
   createOnlineMatch,
@@ -35,7 +39,7 @@ import {
   subscribeToOnlineMatch,
   submitOnlineMove,
 } from "./online";
-import { PLAYER_THEME, styles, SURFACE } from "./styles";
+import { getBurmeseTextStyle, PLAYER_THEME, styles, SURFACE } from "./styles";
 import { COPY, DEFAULT_LANGUAGE, LANGUAGE_OPTIONS } from "./translations";
 import { PlayerStrip } from "./ui";
 
@@ -57,6 +61,36 @@ const MENU_OPTIONS = [
 const AI_THINK_DELAY = 420;
 const AI_MOVE_DELAY = 340;
 const ONLINE_MODE = MENU_OPTIONS.find((option) => option.key === "online");
+const WIN_SOUND_DEDUPE_MS = 1200;
+const MOVE_SOUND = {
+  MOVE: "move",
+  CAPTURE: "capture",
+  PROMOTE: "promote",
+  WIN: "win",
+};
+const MOVE_SOUND_SOURCE = {
+  [MOVE_SOUND.MOVE]: require("./assets/sounds/piece-move.wav"),
+  [MOVE_SOUND.CAPTURE]: require("./assets/sounds/piece-capture.wav"),
+  [MOVE_SOUND.PROMOTE]: require("./assets/sounds/piece-promote.wav"),
+  [MOVE_SOUND.WIN]: require("./assets/sounds/game-win.wav"),
+};
+const CONFETTI_COLORS = [
+  "#79dbc7",
+  "#f4ca6f",
+  "#ff8fa3",
+  "#8bb8ff",
+  "#ead2a2",
+  "#dcfff6",
+];
+const CONFETTI_PIECES = Array.from({ length: 28 }).map((_, index) => ({
+  key: `confetti-${index}`,
+  left: `${(index * 37) % 100}%`,
+  delay: (index % 7) * 90,
+  duration: 1350 + (index % 5) * 140,
+  color: CONFETTI_COLORS[index % CONFETTI_COLORS.length],
+  size: 7 + (index % 4) * 2,
+  rotate: index % 2 === 0 ? "28deg" : "-32deg",
+}));
 
 const AI_DIFFICULTY_OPTIONS = [
   { key: AI_DIFFICULTIES.EASY },
@@ -88,6 +122,114 @@ function sleep(delay) {
   });
 }
 
+function getTurnWinner(nextBoard, completedPlayer) {
+  const nextPlayer = getOpponent(completedPlayer);
+  const nextPlayerHasPieces = countPieces(nextBoard, nextPlayer) > 0;
+  const nextPlayerHasMoves = getAllLegalMoves(nextBoard, nextPlayer).length > 0;
+
+  return !nextPlayerHasPieces || !nextPlayerHasMoves ? completedPlayer : null;
+}
+
+function didMovePromote(previousBoard, move, nextBoard) {
+  const previousPiece = previousBoard?.[move.from.row]?.[move.from.col];
+  const nextPiece = nextBoard?.[move.to.row]?.[move.to.col];
+
+  return Boolean(previousPiece && !previousPiece.king && nextPiece?.king);
+}
+
+function getMoveSoundKind(previousBoard, move, nextBoard, moveWinner = null) {
+  if (moveWinner) {
+    return MOVE_SOUND.WIN;
+  }
+
+  if (didMovePromote(previousBoard, move, nextBoard)) {
+    return MOVE_SOUND.PROMOTE;
+  }
+
+  if (move.captured) {
+    return MOVE_SOUND.CAPTURE;
+  }
+
+  return MOVE_SOUND.MOVE;
+}
+
+function isSamePiece(firstPiece, secondPiece) {
+  return (
+    firstPiece?.player === secondPiece?.player &&
+    Boolean(firstPiece?.king) === Boolean(secondPiece?.king)
+  );
+}
+
+function inferMoveFromBoards(previousBoard, nextBoard) {
+  const removed = [];
+  const added = [];
+
+  for (let row = 0; row < 8; row += 1) {
+    for (let col = 0; col < 8; col += 1) {
+      const previousPiece = previousBoard?.[row]?.[col] ?? null;
+      const nextPiece = nextBoard?.[row]?.[col] ?? null;
+
+      if (isSamePiece(previousPiece, nextPiece)) {
+        continue;
+      }
+
+      if (previousPiece) {
+        removed.push({ row, col, piece: previousPiece });
+      }
+
+      if (nextPiece) {
+        added.push({ row, col, piece: nextPiece });
+      }
+    }
+  }
+
+  const movedTo = added.find((addedCell) =>
+    removed.some((removedCell) => removedCell.piece.player === addedCell.piece.player)
+  );
+
+  if (!movedTo) {
+    return null;
+  }
+
+  const movedFrom = removed.find(
+    (removedCell) => removedCell.piece.player === movedTo.piece.player
+  );
+  const captured = removed.find(
+    (removedCell) => removedCell.piece.player !== movedTo.piece.player
+  );
+
+  return {
+    captured,
+    promoted: Boolean(movedFrom && !movedFrom.piece.king && movedTo.piece.king),
+  };
+}
+
+function inferMoveSoundKind(previousBoard, nextBoard, moveWinner = null) {
+  if (moveWinner) {
+    return MOVE_SOUND.WIN;
+  }
+
+  const inferredMove = inferMoveFromBoards(previousBoard, nextBoard);
+  if (!inferredMove) {
+    return null;
+  }
+
+  if (inferredMove.promoted) {
+    return MOVE_SOUND.PROMOTE;
+  }
+
+  if (inferredMove.captured) {
+    return MOVE_SOUND.CAPTURE;
+  }
+
+  return MOVE_SOUND.MOVE;
+}
+
+function getMoveNumber(state) {
+  const moveNumber = Number(state?.moveNumber);
+  return Number.isFinite(moveNumber) ? moveNumber : 0;
+}
+
 function countPresencePlayers(presenceState) {
   return Object.values(presenceState).filter((presenceList) =>
     Array.isArray(presenceList) ? presenceList.length > 0 : false
@@ -95,6 +237,10 @@ function countPresencePlayers(presenceState) {
 }
 
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    "Padauk-Regular": require("./assets/fonts/Padauk-Regular.ttf"),
+    "Padauk-Bold": require("./assets/fonts/Padauk-Bold.ttf"),
+  });
   const [screen, setScreen] = useState("intro");
   const [returnScreen, setReturnScreen] = useState("intro");
   const [language, setLanguage] = useState(DEFAULT_LANGUAGE);
@@ -116,9 +262,31 @@ export default function App() {
   const [onlineError, setOnlineError] = useState("");
   const [onlineConnection, setOnlineConnection] = useState("idle");
   const [onlinePresence, setOnlinePresence] = useState({});
+  const [exitConfirmVisible, setExitConfirmVisible] = useState(false);
+  const [winnerDialogVisible, setWinnerDialogVisible] = useState(false);
+  const moveSound = useAudioPlayer(MOVE_SOUND_SOURCE[MOVE_SOUND.MOVE]);
+  const captureSound = useAudioPlayer(MOVE_SOUND_SOURCE[MOVE_SOUND.CAPTURE]);
+  const promoteSound = useAudioPlayer(MOVE_SOUND_SOURCE[MOVE_SOUND.PROMOTE]);
+  const winSound = useAudioPlayer(MOVE_SOUND_SOURCE[MOVE_SOUND.WIN]);
+  const boardRef = useRef(board);
+  const onlineMoveNumberRef = useRef(null);
+  const lastCelebratedWinnerRef = useRef(null);
+  const lastWinSoundAtRef = useRef(0);
+  const confettiAnimations = useRef(
+    CONFETTI_PIECES.map(() => new Animated.Value(0))
+  ).current;
   const { width, height } = useWindowDimensions();
   const copy = COPY[language] ?? COPY[DEFAULT_LANGUAGE];
   const isBurmese = language === "my";
+
+  function Text({ style, ...props }) {
+    return (
+      <RNText
+        {...props}
+        style={getBurmeseTextStyle(style, isBurmese, fontsLoaded)}
+      />
+    );
+  }
   const playerThemes = useMemo(
     () => ({
       [PLAYERS.RED]: {
@@ -157,6 +325,30 @@ export default function App() {
   const boardIntro = useRef(new Animated.Value(0)).current;
   const pulse = useRef(new Animated.Value(0)).current;
 
+  function playMoveSound(soundKind) {
+    const soundPlayer = {
+      [MOVE_SOUND.MOVE]: moveSound,
+      [MOVE_SOUND.CAPTURE]: captureSound,
+      [MOVE_SOUND.PROMOTE]: promoteSound,
+      [MOVE_SOUND.WIN]: winSound,
+    }[soundKind];
+
+    if (!soundPlayer) {
+      return;
+    }
+
+    try {
+      const seekResult = soundPlayer.seekTo(0);
+      seekResult?.catch?.(() => {});
+      soundPlayer.play();
+      if (soundKind === MOVE_SOUND.WIN) {
+        lastWinSoundAtRef.current = Date.now();
+      }
+    } catch {
+      // Sound effects should never block a move.
+    }
+  }
+
   useEffect(() => {
     if (Platform.OS !== "android") {
       return;
@@ -173,6 +365,25 @@ export default function App() {
 
     applyFullscreen();
   }, []);
+
+  useEffect(() => {
+    setAudioModeAsync({
+      playsInSilentMode: true,
+      shouldPlayInBackground: false,
+      interruptionMode: "mixWithOthers",
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    moveSound.volume = 0.38;
+    captureSound.volume = 0.48;
+    promoteSound.volume = 0.42;
+    winSound.volume = 0.44;
+  }, [moveSound, captureSound, promoteSound, winSound]);
+
+  useEffect(() => {
+    boardRef.current = board;
+  }, [board]);
 
   useEffect(() => {
     const loop = Animated.loop(
@@ -198,6 +409,8 @@ export default function App() {
 
   useEffect(() => {
     if (screen !== "game") {
+      setExitConfirmVisible(false);
+      setWinnerDialogVisible(false);
       boardIntro.setValue(0);
       return;
     }
@@ -209,6 +422,56 @@ export default function App() {
       useNativeDriver: true,
     }).start();
   }, [boardIntro, screen]);
+
+  useEffect(() => {
+    if (screen !== "game" || !winner) {
+      return;
+    }
+
+    if (lastCelebratedWinnerRef.current === winner) {
+      return;
+    }
+
+    lastCelebratedWinnerRef.current = winner;
+    setWinnerDialogVisible(true);
+
+    confettiAnimations.forEach((animation) => {
+      animation.setValue(0);
+    });
+
+    Animated.stagger(
+      34,
+      confettiAnimations.map((animation, index) =>
+        Animated.timing(animation, {
+          toValue: 1,
+          duration: CONFETTI_PIECES[index].duration,
+          delay: CONFETTI_PIECES[index].delay,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        })
+      )
+    ).start();
+
+    if (Date.now() - lastWinSoundAtRef.current > WIN_SOUND_DEDUPE_MS) {
+      playMoveSound(MOVE_SOUND.WIN);
+    }
+  }, [screen, winner, confettiAnimations]);
+
+  useEffect(() => {
+    if (screen !== "game") {
+      return undefined;
+    }
+
+    const subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        setExitConfirmVisible(true);
+        return true;
+      }
+    );
+
+    return () => subscription.remove();
+  }, [screen]);
 
   const pulseScale = pulse.interpolate({
     inputRange: [0, 1],
@@ -267,6 +530,7 @@ export default function App() {
       : winner
       ? playerThemes[winner].accent
       : currentTheme.accent;
+  const winnerTheme = winner ? playerThemes[winner] : null;
 
   useEffect(() => {
     let mounted = true;
@@ -293,7 +557,7 @@ export default function App() {
 
     return subscribeToOnlineMatch(onlineSession, {
       onState: (state) => {
-        applyOnlineState(state);
+        applyOnlineState(state, { playMoveSound: true });
         setOnlineError("");
       },
       onPresence: setOnlinePresence,
@@ -305,13 +569,18 @@ export default function App() {
   }, [onlineSession?.matchId, onlineSession?.realtimeTopic, onlineSession?.color, copy]);
 
   function resetGame() {
-    setBoard(createInitialBoard());
+    const initialBoard = createInitialBoard();
+
+    boardRef.current = initialBoard;
+    setBoard(initialBoard);
     setCurrentPlayer(PLAYERS.RED);
     setSelected(null);
     setLegalMoves([]);
     setForcedPiece(null);
     setWinner(null);
     setAiThinking(false);
+    setWinnerDialogVisible(false);
+    lastCelebratedWinnerRef.current = null;
   }
 
   function resetOnlineRuntime() {
@@ -322,15 +591,35 @@ export default function App() {
     setOnlineError("");
     setOnlineConnection("idle");
     setOnlinePresence({});
+    onlineMoveNumberRef.current = null;
   }
 
-  function applyOnlineState(state) {
+  function applyOnlineState(state, options = {}) {
     if (!state) {
       return;
     }
 
+    const previousMoveNumber = onlineMoveNumberRef.current;
+    const nextMoveNumber = getMoveNumber(state);
+    const nextBoard = state.board ?? createInitialBoard();
+
+    if (
+      options.playMoveSound &&
+      previousMoveNumber !== null &&
+      nextMoveNumber > previousMoveNumber
+    ) {
+      const soundKind = inferMoveSoundKind(
+        boardRef.current,
+        nextBoard,
+        state.winner
+      );
+      playMoveSound(soundKind);
+    }
+
+    boardRef.current = nextBoard;
+    onlineMoveNumberRef.current = nextMoveNumber;
     setOnlineMatchState(state);
-    setBoard(state.board ?? createInitialBoard());
+    setBoard(nextBoard);
     setCurrentPlayer(state.currentPlayer ?? PLAYERS.RED);
     setForcedPiece(state.forcedPiece ?? null);
     setWinner(state.winner ?? null);
@@ -367,9 +656,31 @@ export default function App() {
   }
 
   function goBackToMenu() {
+    setExitConfirmVisible(false);
     resetGame();
     resetOnlineRuntime();
     setScreen("intro");
+  }
+
+  function requestExitGame() {
+    setExitConfirmVisible(true);
+  }
+
+  function cancelExitGame() {
+    setExitConfirmVisible(false);
+  }
+
+  function confirmExitGame() {
+    goBackToMenu();
+  }
+
+  function startWinnerRematch() {
+    setWinnerDialogVisible(false);
+    startMatch(matchMode);
+  }
+
+  function closeWinnerDialog() {
+    setWinnerDialogVisible(false);
   }
 
   function openSettings() {
@@ -455,18 +766,17 @@ export default function App() {
   }
 
   function finishTurn(nextBoard, completedPlayer = currentPlayer) {
-    const nextPlayer =
-      completedPlayer === PLAYERS.RED ? PLAYERS.BLUE : PLAYERS.RED;
-    const nextPlayerHasPieces = countPieces(nextBoard, nextPlayer) > 0;
-    const nextPlayerHasMoves = getAllLegalMoves(nextBoard, nextPlayer).length > 0;
+    const nextPlayer = getOpponent(completedPlayer);
+    const turnWinner = getTurnWinner(nextBoard, completedPlayer);
 
+    boardRef.current = nextBoard;
     setBoard(nextBoard);
     setSelected(null);
     setLegalMoves([]);
     setForcedPiece(null);
 
-    if (!nextPlayerHasPieces || !nextPlayerHasMoves) {
-      setWinner(completedPlayer);
+    if (turnWinner) {
+      setWinner(turnWinner);
       return;
     }
 
@@ -535,7 +845,9 @@ export default function App() {
           );
 
           if (followUpCaptures.length > 0) {
+            boardRef.current = result.board;
             setBoard(result.board);
+            playMoveSound(getMoveSoundKind(board, chosenMove, result.board));
             setSelected(result.movedTo);
             setLegalMoves(followUpCaptures);
             setForcedPiece(result.movedTo);
@@ -543,6 +855,10 @@ export default function App() {
           }
         }
 
+        const moveWinner = getTurnWinner(result.board, currentPlayer);
+        playMoveSound(
+          getMoveSoundKind(board, chosenMove, result.board, moveWinner)
+        );
         finishTurn(result.board, currentPlayer);
         return;
       }
@@ -563,6 +879,7 @@ export default function App() {
     setOnlineError("");
 
     try {
+      const previousMoveNumber = onlineMoveNumberRef.current;
       const result = await submitOnlineMove(
         onlineSession,
         onlineMatchState,
@@ -571,6 +888,17 @@ export default function App() {
       setOnlineSession(result.session);
       await saveOnlineSession(result.session);
       setSavedOnlineSession(result.session);
+      if (getMoveNumber(result.state) > (previousMoveNumber ?? -1)) {
+        const nextBoard = result.state?.board ?? boardRef.current;
+        playMoveSound(
+          getMoveSoundKind(
+            boardRef.current,
+            chosenMove,
+            nextBoard,
+            result.state?.winner
+          )
+        );
+      }
       applyOnlineState(result.state);
     } catch (error) {
       if (error.data?.state) {
@@ -622,9 +950,21 @@ export default function App() {
           return;
         }
 
+        const previousBoard = nextBoard;
         const result = applyMove(nextBoard, move);
         nextBoard = result.board;
+        boardRef.current = nextBoard;
         setBoard(nextBoard);
+        playMoveSound(
+          getMoveSoundKind(
+            previousBoard,
+            move,
+            nextBoard,
+            index === aiMoves.length - 1
+              ? getTurnWinner(nextBoard, PLAYERS.BLUE)
+              : null
+          )
+        );
 
         if (index < aiMoves.length - 1) {
           setSelected(result.movedTo);
@@ -914,32 +1254,54 @@ export default function App() {
               <Text style={styles.title}>{copy.onlineLobby.title}</Text>
             </View>
 
-            <View style={styles.onlineLobbyPanel}>
-              <Pressable
-                onPress={handleCreateOnlineMatch}
-                disabled={onlineBusy}
-                style={({ pressed }) => [
-                  styles.onlinePrimaryButton,
-                  pressed && styles.actionButtonPressed,
-                  onlineBusy && styles.onlineButtonDisabled,
-                ]}
-              >
-                <Text style={styles.onlinePrimaryButtonText}>
-                  {onlineBusy
-                    ? copy.onlineLobby.working
-                    : copy.onlineLobby.createRoom}
-                </Text>
-              </Pressable>
+            <View style={styles.onlineLobbyActions}>
+              <View style={styles.onlineActionPanel}>
+                <View style={styles.onlineActionHeader}>
+                  <View style={styles.onlineActionIcon}>
+                    <Text style={styles.onlineActionIconText}>+</Text>
+                  </View>
+                  <View style={styles.onlineActionCopy}>
+                    <Text style={styles.onlineActionTitle}>
+                      {copy.onlineLobby.createTitle}
+                    </Text>
+                    <Text style={styles.onlineActionDetail}>
+                      {copy.onlineLobby.createDetail}
+                    </Text>
+                  </View>
+                </View>
 
-              <View style={styles.onlineJoinBlock}>
-                <Text
-                  style={[
-                    styles.onlineSectionLabel,
-                    isBurmese && styles.burmeseEyebrow,
+                <Pressable
+                  onPress={handleCreateOnlineMatch}
+                  disabled={onlineBusy}
+                  style={({ pressed }) => [
+                    styles.onlinePrimaryButton,
+                    pressed && styles.actionButtonPressed,
+                    onlineBusy && styles.onlineButtonDisabled,
                   ]}
                 >
-                  {copy.onlineLobby.joinByCode}
-                </Text>
+                  <Text style={styles.onlinePrimaryButtonText}>
+                    {onlineBusy
+                      ? copy.onlineLobby.working
+                      : copy.onlineLobby.createRoom}
+                  </Text>
+                </Pressable>
+              </View>
+
+              <View style={styles.onlineActionPanel}>
+                <View style={styles.onlineActionHeader}>
+                  <View style={styles.onlineActionIcon}>
+                    <Text style={styles.onlineActionIconText}>#</Text>
+                  </View>
+                  <View style={styles.onlineActionCopy}>
+                    <Text style={styles.onlineActionTitle}>
+                      {copy.onlineLobby.joinTitle}
+                    </Text>
+                    <Text style={styles.onlineActionDetail}>
+                      {copy.onlineLobby.joinDetail}
+                    </Text>
+                  </View>
+                </View>
+
                 <View style={styles.onlineJoinRow}>
                   <TextInput
                     value={joinCode}
@@ -1096,7 +1458,7 @@ export default function App() {
       >
         <View style={[styles.gameTopBar, { width: seatWidth }]}>
           <Pressable
-            onPress={goBackToMenu}
+            onPress={requestExitGame}
             style={({ pressed }) => [
               styles.backButton,
               pressed && styles.actionButtonPressed,
@@ -1164,6 +1526,7 @@ export default function App() {
           pulseScale={pulseScale}
           pulseOpacity={pulseOpacity}
           labels={copy.players}
+          textComponent={Text}
           style={[styles.seatSpacerTop, { width: seatWidth }]}
         />
 
@@ -1307,9 +1670,134 @@ export default function App() {
           pulseScale={pulseScale}
           pulseOpacity={pulseOpacity}
           labels={copy.players}
+          textComponent={Text}
           style={[styles.seatSpacerBottom, { width: seatWidth }]}
         />
       </ScrollView>
+
+      {winnerDialogVisible && winnerTheme ? (
+        <View style={styles.winnerOverlay}>
+          <View pointerEvents="none" style={styles.confettiLayer}>
+            {CONFETTI_PIECES.map((piece, index) => {
+              const translateY = confettiAnimations[index].interpolate({
+                inputRange: [0, 1],
+                outputRange: [-140, height * 0.72],
+              });
+              const translateX = confettiAnimations[index].interpolate({
+                inputRange: [0, 0.5, 1],
+                outputRange: [0, index % 2 === 0 ? 18 : -18, 0],
+              });
+              const opacity = confettiAnimations[index].interpolate({
+                inputRange: [0, 0.12, 0.85, 1],
+                outputRange: [0, 1, 1, 0],
+              });
+              const rotate = confettiAnimations[index].interpolate({
+                inputRange: [0, 1],
+                outputRange: ["0deg", piece.rotate],
+              });
+
+              return (
+                <Animated.View
+                  key={piece.key}
+                  style={[
+                    styles.confettiPiece,
+                    {
+                      left: piece.left,
+                      width: piece.size,
+                      height: piece.size * 1.7,
+                      backgroundColor: piece.color,
+                      opacity,
+                      transform: [{ translateY }, { translateX }, { rotate }],
+                    },
+                  ]}
+                />
+              );
+            })}
+          </View>
+
+          <View style={styles.winnerDialog}>
+            <View
+              style={[
+                styles.winnerBadge,
+                {
+                  borderColor: winnerTheme.accent,
+                  backgroundColor: winnerTheme.wash,
+                },
+              ]}
+            >
+              <Text style={[styles.winnerBadgeText, { color: winnerTheme.accent }]}>
+                ★
+              </Text>
+            </View>
+
+            <Text style={styles.winnerTitle}>{copy.game.congratsTitle}</Text>
+            <Text style={[styles.winnerMessage, { color: winnerTheme.accent }]}>
+              {copy.game.congratsMessage(getPlayerLabel(winner))}
+            </Text>
+
+            <View style={styles.confirmActions}>
+              <Pressable
+                onPress={closeWinnerDialog}
+                style={({ pressed }) => [
+                  styles.confirmSecondaryButton,
+                  pressed && styles.actionButtonPressed,
+                ]}
+              >
+                <Text style={styles.confirmSecondaryText}>
+                  {copy.game.congratsClose}
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={startWinnerRematch}
+                style={({ pressed }) => [
+                  styles.confirmPrimaryButton,
+                  pressed && styles.actionButtonPressed,
+                ]}
+              >
+                <Text style={styles.confirmPrimaryText}>
+                  {copy.game.congratsRematch}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      ) : null}
+
+      {exitConfirmVisible ? (
+        <View style={styles.confirmOverlay}>
+          <View style={styles.confirmDialog}>
+            <Text style={styles.confirmTitle}>{copy.game.exitTitle}</Text>
+            <Text style={styles.confirmMessage}>{copy.game.exitMessage}</Text>
+
+            <View style={styles.confirmActions}>
+              <Pressable
+                onPress={cancelExitGame}
+                style={({ pressed }) => [
+                  styles.confirmSecondaryButton,
+                  pressed && styles.actionButtonPressed,
+                ]}
+              >
+                <Text style={styles.confirmSecondaryText}>
+                  {copy.game.exitCancel}
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={confirmExitGame}
+                style={({ pressed }) => [
+                  styles.confirmPrimaryButton,
+                  pressed && styles.actionButtonPressed,
+                ]}
+              >
+                <Text style={styles.confirmPrimaryText}>
+                  {copy.game.exitConfirm}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      ) : null}
     </SafeAreaView>
   );
 }

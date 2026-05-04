@@ -1,5 +1,30 @@
 import { Platform, StyleSheet } from "react-native";
 
+export const BURMESE_FONT = {
+  regular: "Padauk-Regular",
+  bold: "Padauk-Bold",
+};
+
+export function getBurmeseTextStyle(style, isBurmese, fontsLoaded) {
+  if (!isBurmese || !fontsLoaded) {
+    return style;
+  }
+
+  const flattenedStyle = StyleSheet.flatten(style);
+  const weight = flattenedStyle?.fontWeight;
+  const numericWeight = Number(weight);
+  const isBold =
+    weight === "bold" || (Number.isFinite(numericWeight) && numericWeight >= 700);
+
+  return [
+    style,
+    {
+      fontFamily: isBold ? BURMESE_FONT.bold : BURMESE_FONT.regular,
+      fontWeight: isBold ? "700" : "400",
+    },
+  ];
+}
+
 export const SURFACE = {
   background: "#120d0a",
   backdropA: "#2a1a11",
@@ -340,14 +365,52 @@ export const styles = StyleSheet.create({
   difficultyButtonTextActive: {
     color: SURFACE.buttonText,
   },
-  onlineLobbyPanel: {
-    gap: 16,
-    paddingVertical: 18,
+  onlineLobbyActions: {
+    gap: 14,
+  },
+  onlineActionPanel: {
+    gap: 14,
+    paddingVertical: 16,
     paddingHorizontal: 16,
     borderWidth: 1,
     borderColor: "rgba(234,210,162,0.22)",
     borderRadius: 22,
     backgroundColor: "rgba(255,255,255,0.035)",
+  },
+  onlineActionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  onlineActionIcon: {
+    width: 42,
+    height: 42,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 21,
+    backgroundColor: SURFACE.button,
+  },
+  onlineActionIconText: {
+    color: SURFACE.buttonText,
+    fontSize: 22,
+    lineHeight: 26,
+    fontWeight: "900",
+  },
+  onlineActionCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 3,
+  },
+  onlineActionTitle: {
+    color: SURFACE.text,
+    fontSize: 18,
+    lineHeight: 23,
+    fontWeight: "900",
+  },
+  onlineActionDetail: {
+    color: SURFACE.muted,
+    fontSize: 13,
+    lineHeight: 19,
   },
   onlinePrimaryButton: {
     minHeight: 52,
@@ -374,11 +437,9 @@ export const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   onlineJoinRow: {
-    flexDirection: "row",
     gap: 10,
   },
   onlineCodeInput: {
-    flex: 1,
     minHeight: 50,
     color: SURFACE.text,
     fontSize: 18,
@@ -393,7 +454,6 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   onlineJoinButton: {
-    minWidth: 84,
     minHeight: 50,
     alignItems: "center",
     justifyContent: "center",
@@ -703,6 +763,134 @@ export const styles = StyleSheet.create({
     letterSpacing: 2.4,
     textTransform: "uppercase",
     marginBottom: 10,
+  },
+  confirmOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 30,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+    backgroundColor: "rgba(0,0,0,0.58)",
+  },
+  confirmDialog: {
+    width: "100%",
+    maxWidth: 420,
+    gap: 14,
+    paddingVertical: 20,
+    paddingHorizontal: 18,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "rgba(234,210,162,0.28)",
+    backgroundColor: SURFACE.shell,
+  },
+  confirmTitle: {
+    color: SURFACE.text,
+    fontSize: 22,
+    lineHeight: 27,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  confirmMessage: {
+    color: SURFACE.muted,
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: "center",
+  },
+  confirmActions: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 4,
+  },
+  confirmSecondaryButton: {
+    flex: 1,
+    minHeight: 46,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 11,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: SURFACE.line,
+    backgroundColor: "rgba(255,255,255,0.035)",
+  },
+  confirmSecondaryText: {
+    color: SURFACE.text,
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  confirmPrimaryButton: {
+    flex: 1,
+    minHeight: 46,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 11,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: SURFACE.button,
+  },
+  confirmPrimaryText: {
+    color: SURFACE.buttonText,
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  winnerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+    backgroundColor: "rgba(0,0,0,0.38)",
+  },
+  confettiLayer: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: "hidden",
+  },
+  confettiPiece: {
+    position: "absolute",
+    top: 0,
+    borderRadius: 3,
+  },
+  winnerDialog: {
+    width: "100%",
+    maxWidth: 430,
+    alignItems: "center",
+    gap: 13,
+    paddingVertical: 24,
+    paddingHorizontal: 18,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "rgba(234,210,162,0.32)",
+    backgroundColor: SURFACE.shell,
+  },
+  winnerBadge: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  winnerBadgeText: {
+    fontSize: 34,
+    lineHeight: 38,
+    fontWeight: "900",
+  },
+  winnerTitle: {
+    color: SURFACE.text,
+    fontSize: 28,
+    lineHeight: 34,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  winnerMessage: {
+    fontSize: 17,
+    lineHeight: 24,
+    fontWeight: "900",
+    textAlign: "center",
   },
   seatSpacerTop: { marginBottom: 14 },
   seatSpacerBottom: { marginTop: 14 },

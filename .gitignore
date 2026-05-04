@@ -5,3 +5,5 @@ npm-debug.*
 yarn-debug.*
 yarn-error.*
 *.log
+.env
+.env.local

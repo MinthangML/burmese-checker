@@ -1,0 +1,13 @@
+project_id = "burmese-checker"
+
+[functions.create-match]
+verify_jwt = false
+
+[functions.join-match]
+verify_jwt = false
+
+[functions.get-match]
+verify_jwt = false
+
+[functions.submit-move]
+verify_jwt = false

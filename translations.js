@@ -1,0 +1,208 @@
+export const DEFAULT_LANGUAGE = "my";
+
+export const LANGUAGE_OPTIONS = [
+  { key: "my", label: "မြန်မာ" },
+  { key: "en", label: "English" },
+];
+
+export const COPY = {
+  my: {
+    language: "ဘာသာစကား",
+    intro: {
+      kicker: "ရိုးရာကစားပွဲ",
+      title: "မြန်မာကျားထိုး",
+    },
+    settings: {
+      title: "ဆက်တင်များ",
+      button: "ဆက်တင်",
+      back: "ပြန်သွားရန်",
+      languageTitle: "ဘာသာစကား",
+      languageDetail: "အက်ပ်တွင် ပြသမည့်ဘာသာစကားကို ရွေးပါ။",
+      rulesDetail: "မြန်မာကျားထိုး၏ အခြေခံကစားနည်းများ",
+      aiTitle: "AI အဆင့်",
+      aiDetail: "တစ်ယောက်တည်းကစားရာတွင် အသုံးပြုမည့် AI အဆင့်",
+      modesTitle: "ကစားနည်းများ",
+      modesDetail: "တစ်ယောက်တည်း၊ နှစ်ယောက်ကစားနှင့် အွန်လိုင်းကစားပွဲများကို ရွေးချယ်နိုင်သည်။",
+      onlineTitle: "အွန်လိုင်းကစားပွဲ",
+      onlineDetail: "အခန်းကုဒ်ဖြင့် အဝေးကစားသမားနှင့် ချိတ်ဆက်နိုင်သည်။",
+    },
+    menu: {
+      single: {
+        label: "တစ်ယောက်တည်း",
+        detail: "မိမိတစ်ယောက်တည်း လေ့ကျင့်ကစားပါ",
+      },
+      "two-player": {
+        label: "နှစ်ယောက်ကစား",
+        detail: "ဒီစက်ပေါ်မှာ နှစ်ယောက်အတူ ကစားပါ",
+      },
+      online: {
+        label: "အွန်လိုင်းအများကစား",
+        detail: "အဝေးမှ ကစားပွဲ ပြင်ဆင်ပါ",
+      },
+    },
+    rulesTitle: "စည်းမျဉ်းများ",
+    rules: [
+      "တောင်ဘက်ကစားသမားက စတင်ရွှေ့ပြီး ဖမ်းစားရန်မရှိပါက ရှေ့ထောင့်ဖြတ် တစ်ကွက်ရွှေ့နိုင်သည်။",
+      "ဖမ်းစားနိုင်သောအကွက်ရှိပါက မဖြစ်မနေ ဖမ်းစားရမည်။",
+      "ဆက်ဖမ်းနိုင်သောအကွက်ရှိပါက ထိုအလှည့်အတွင်း အဆုံးထိ ဆက်ဖမ်းရမည်။",
+      "အဆုံးတန်းသို့မရောက်မချင်း အကောင်များသည် ရှေ့ဘက်သို့သာ ရွှေ့ပြီး ဖမ်းစားနိုင်သည်။",
+      "ဘုရင်အကောင်များသည် ထောင့်ဖြတ်လမ်းကြောင်းပေါ်တွင် အကွက်အကွာအဝေးမရွေး ရွှေ့နိုင်ပြီး လမ်းရှင်းပါက အဝေးရှိ ပြိုင်ဘက်ကို ဖမ်းစားနိုင်သည်။",
+    ],
+    players: {
+      red: { label: "ကျောက်စိမ်း", seat: "တောင်ဘက်" },
+      blue: { label: "ရွှေ", seat: "မြောက်ဘက်" },
+      fallback: "ကစားသမား",
+      pieces: "အကောင်",
+      winner: "နိုင်သူ",
+      onMove: "ရွှေ့ရန်အလှည့်",
+    },
+    difficulty: {
+      title: "တစ်ယောက်တည်း AI",
+      easy: "လွယ်",
+      normal: "ပုံမှန်",
+      hard: "ခက်",
+    },
+    game: {
+      menu: "မီနူး",
+      matchState: "ကစားပွဲအခြေအနေ",
+      room: "အခန်း",
+      connected: "ချိတ်ဆက်ပြီး",
+      online: "အွန်လိုင်း",
+      winnerLocal: (player) =>
+        `${player} က စားပွဲကို ထိန်းချုပ်နိုင်ပြီ။ အသစ်စရန် ဒီနေရာကို နှိပ်ပါ။`,
+      aiThinking: (player, difficulty) =>
+        `${player} က ${difficulty} အဆင့် ရွှေ့ကွက်ကို စဉ်းစားနေသည်။`,
+      continueCapture: (player) =>
+        `${player} သည် ဖမ်းစားသည့်အဆက်ကို ဆက်လုပ်ရမည်။`,
+      mustCapture: (player) => `${player} သည် ဖမ်းစားနိုင်သောအကွက်ကို ယူရမည်။`,
+      quietMove: (player) => `${player} သည် ရှေ့ထောင့်ဖြတ် ရွှေ့နိုင်သည်။`,
+      submittingMove: "အခန်းသို့ ရွှေ့ကွက် ပို့နေသည်။",
+      waitingRoom: (roomCode, player) =>
+        `အခန်း ${roomCode} သည် ${player} ဝင်လာရန် စောင့်နေသည်။`,
+      winnerOnline: (player) => `${player} က အွန်လိုင်းစားပွဲကို ထိန်းချုပ်နိုင်ပြီ။`,
+      waitingMove: (player) => `${player} ရွှေ့ရန် စောင့်နေသည်။`,
+      waitingSecondPlayer: "ဒုတိယကစားသမား ဝင်လာရန် စောင့်နေသည်။",
+    },
+    onlineLobby: {
+      kicker: "အဝေးကစားပွဲ",
+      title: "အွန်လိုင်းကစားပွဲ",
+      createRoom: "အခန်းဖန်တီး",
+      working: "လုပ်ဆောင်နေသည်...",
+      joinByCode: "ကုဒ်ဖြင့်ဝင်ရန်",
+      join: "ဝင်ရန်",
+      savedRoom: "သိမ်းထားသောအခန်း",
+      resume: "ပြန်စရန်",
+      forget: "ဖယ်ရန်",
+      rulesTitle: "အွန်လိုင်း စည်းမျဉ်းများ",
+      rules: [
+        "ကျောက်စိမ်းက အခန်းဖန်တီးပြီး ရွှေဝင်လာပြီးနောက် ပထမဆုံးရွှေ့သည်။",
+        "ဘုတ်ပြောင်းလဲမှုမပြမီ ရွှေ့ကွက်များကို ဆာဗာတွင် အတည်ပြုသည်။",
+      ],
+    },
+    errors: {
+      onlineRequestFailed: "အွန်လိုင်းကစားပွဲ တောင်းဆိုမှု မအောင်မြင်ပါ။",
+      missingConfig:
+        "အွန်လိုင်းကစားပွဲ မစမီ .env ဖိုင်တွင် Supabase URL နှင့် anon key ထည့်ပါ။",
+      invalidRoomCode: "အခန်းကုဒ် ၆ လုံး ထည့်ပါ။",
+    },
+  },
+  en: {
+    language: "Language",
+    intro: {
+      kicker: "Traditional Table",
+      title: "Burmese Checkers",
+    },
+    settings: {
+      title: "Settings",
+      button: "Settings",
+      back: "Back",
+      languageTitle: "Language",
+      languageDetail: "Choose the language used across the app.",
+      rulesDetail: "Core rules for Burmese Checkers.",
+      aiTitle: "AI difficulty",
+      aiDetail: "Difficulty used for single-player matches.",
+      modesTitle: "Game modes",
+      modesDetail: "Choose single player, local two-player, or online multiplayer.",
+      onlineTitle: "Online play",
+      onlineDetail: "Use room codes to connect with a remote player.",
+    },
+    menu: {
+      single: {
+        label: "Single",
+        detail: "Practice at your own pace",
+      },
+      "two-player": {
+        label: "Two Player",
+        detail: "Share this board locally",
+      },
+      online: {
+        label: "Online Multiplayer",
+        detail: "Prepare a remote match",
+      },
+    },
+    rulesTitle: "Rules",
+    rules: [
+      "South seat moves first and can advance one diagonal step when no capture is open.",
+      "Captures are mandatory. If a jump exists, quiet moves are blocked.",
+      "A piece that can continue capturing must finish the full chain in the same turn.",
+      "Pieces only move and capture forward until they crown into queens on the far edge.",
+      "Queens move any distance diagonally and can capture over a distant opposing piece when the path is clear.",
+    ],
+    players: {
+      red: { label: "Jade", seat: "South seat" },
+      blue: { label: "Gold", seat: "North seat" },
+      fallback: "Player",
+      pieces: "pieces",
+      winner: "winner",
+      onMove: "on move",
+    },
+    difficulty: {
+      title: "Single player AI",
+      easy: "Easy",
+      normal: "Normal",
+      hard: "Hard",
+    },
+    game: {
+      menu: "Menu",
+      matchState: "Match state",
+      room: "Room",
+      connected: "Connected",
+      online: "online",
+      winnerLocal: (player) =>
+        `${player} controls the table. Tap here for a new match.`,
+      aiThinking: (player, difficulty) =>
+        `${player} is choosing a ${difficulty.toLowerCase()} move.`,
+      continueCapture: (player) => `${player} must continue the capture chain.`,
+      mustCapture: (player) => `${player} must take the open jump.`,
+      quietMove: (player) => `${player} may make a quiet diagonal move.`,
+      submittingMove: "Submitting the move to the room.",
+      waitingRoom: (roomCode, player) =>
+        `Room ${roomCode} is waiting for ${player} to join.`,
+      winnerOnline: (player) => `${player} controls the online table.`,
+      waitingMove: (player) => `Waiting for ${player} to move.`,
+      waitingSecondPlayer: "Waiting for the second player to join.",
+    },
+    onlineLobby: {
+      kicker: "Remote Table",
+      title: "Online Match",
+      createRoom: "Create Room",
+      working: "Working...",
+      joinByCode: "Join by code",
+      join: "Join",
+      savedRoom: "Saved room",
+      resume: "Resume",
+      forget: "Forget",
+      rulesTitle: "Online Rules",
+      rules: [
+        "Jade creates the room and moves first after Gold joins.",
+        "Moves are committed by the server before the board changes.",
+      ],
+    },
+    errors: {
+      onlineRequestFailed: "Online match request failed.",
+      missingConfig:
+        "Add your Supabase URL and anon key to .env before starting an online match.",
+      invalidRoomCode: "Enter the 6-character room code.",
+    },
+  },
+};

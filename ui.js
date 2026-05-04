@@ -9,10 +9,16 @@ export function PlayerStrip({
   isWinner,
   pulseScale,
   pulseOpacity,
+  labels,
   style,
 }) {
   const highlight = isActive || isWinner;
-  const stateLabel = isWinner ? "winner" : isActive ? "on move" : theme.seat;
+  const stateLabel = isWinner
+    ? labels?.winner ?? "winner"
+    : isActive
+    ? labels?.onMove ?? "on move"
+    : theme.seat;
+  const piecesLabel = labels?.pieces ?? "pieces";
 
   return (
     <View style={[styles.playerStrip, style]}>
@@ -39,7 +45,7 @@ export function PlayerStrip({
 
         <View style={styles.playerCount}>
           <Text style={styles.playerCountValue}>{remainingPieces}</Text>
-          <Text style={styles.playerCountLabel}>pieces</Text>
+          <Text style={styles.playerCountLabel}>{piecesLabel}</Text>
         </View>
       </View>
 

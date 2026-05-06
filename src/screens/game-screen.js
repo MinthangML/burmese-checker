@@ -14,6 +14,8 @@ import { PlayerStrip } from "../components/player-strip";
 import { ScreenBackdrop } from "../components/screen-backdrop";
 import { useGame } from "../context/GameContext";
 
+const GAME_BOARD_BANNER_AD_UNIT_ID = "ca-app-pub-8518084536991465/3226860373";
+
 export default function GameScreen() {
   const {
     boardIntro,
@@ -158,7 +160,11 @@ export default function GameScreen() {
         >
           <View style={styles.gameBoardWithAd}>
             <CheckerBoard />
-            <AdMobBanner placement="game-board" style={styles.gameBoardAdBanner} />
+            <AdMobBanner
+              placement="game-board"
+              unitId={GAME_BOARD_BANNER_AD_UNIT_ID}
+              style={styles.gameBoardAdBanner}
+            />
           </View>
         </Animated.View>
       </View>

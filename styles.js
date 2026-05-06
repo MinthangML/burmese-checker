@@ -119,6 +119,14 @@ export const styles = StyleSheet.create({
     top: 180,
     backgroundColor: SURFACE.backdropB,
   },
+  mainFlagBackground: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 232,
+    opacity: 0.14,
+  },
   content: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 28 },
   introContent: {
     flexGrow: 1,

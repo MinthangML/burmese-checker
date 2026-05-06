@@ -1,5 +1,5 @@
 import React from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { Image, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { styles } from "../../styles";
@@ -10,6 +10,8 @@ import { ScreenBackdrop } from "../components/screen-backdrop";
 import { SettingsButton } from "../components/settings-button";
 import { useGame } from "../context/GameContext";
 
+const MAIN_MENU_BANNER_AD_UNIT_ID = "ca-app-pub-8518084536991465/9520380958";
+
 export default function MainScreen() {
   const { copy, height, isBurmese, menuOptions, startMatch } = useGame();
 
@@ -17,6 +19,14 @@ export default function MainScreen() {
     <SafeAreaView style={styles.screen}>
       <StatusBar hidden style="light" animated />
       <ScreenBackdrop />
+      <Image
+        accessibilityIgnoresInvertColors
+        blurRadius={14}
+        pointerEvents="none"
+        resizeMode="cover"
+        source={require("../../assets/myanmar-flag.png")}
+        style={styles.mainFlagBackground}
+      />
       <SettingsButton style={styles.introSettingsButton} showLabel={false} />
 
       <ScrollView
@@ -55,7 +65,11 @@ export default function MainScreen() {
                 </Pressable>
               ))}
             </View>
-            <AdMobBanner placement="main-menu" style={styles.mainMenuAdBanner} />
+            <AdMobBanner
+              placement="main-menu"
+              unitId={MAIN_MENU_BANNER_AD_UNIT_ID}
+              style={styles.mainMenuAdBanner}
+            />
           </View>
         </View>
       </ScrollView>

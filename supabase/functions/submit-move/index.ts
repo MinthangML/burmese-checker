@@ -1,4 +1,8 @@
-import { handleOptions, jsonResponse } from "../_shared/cors.ts";
+import {
+  handleOptions,
+  jsonResponse,
+  setupAwareError,
+} from "../_shared/cors.ts";
 import {
   broadcastMatchState,
   getAdminClient,
@@ -86,11 +90,7 @@ Deno.serve(async (request) => {
     });
   } catch (error) {
     return jsonResponse(
-      {
-        ok: false,
-        code: "server_error",
-        message: error instanceof Error ? error.message : "Submit move failed.",
-      },
+      setupAwareError(error, "Submit move failed."),
       500
     );
   }

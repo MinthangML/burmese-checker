@@ -1,4 +1,8 @@
-import { handleOptions, jsonResponse } from "../_shared/cors.ts";
+import {
+  handleOptions,
+  jsonResponse,
+  setupAwareError,
+} from "../_shared/cors.ts";
 import {
   broadcastMatchState,
   createGuestToken,
@@ -79,11 +83,7 @@ Deno.serve(async (request) => {
     });
   } catch (error) {
     return jsonResponse(
-      {
-        ok: false,
-        code: "server_error",
-        message: error instanceof Error ? error.message : "Join match failed.",
-      },
+      setupAwareError(error, "Join match failed."),
       500
     );
   }

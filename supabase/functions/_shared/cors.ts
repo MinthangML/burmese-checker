@@ -33,3 +33,40 @@ export function handleOptions(request: Request) {
 
   return null;
 }
+
+export function setupAwareError(error: unknown, fallbackMessage: string) {
+  const maybeError = error as { code?: string; message?: string };
+
+  if (maybeError?.code === "42P01") {
+    return {
+      ok: false,
+      code: "database_not_ready",
+      message:
+        "Online database tables are missing. Run `supabase db push`, then deploy the Edge Functions again.",
+    };
+  }
+
+  if (maybeError?.code === "42883") {
+    return {
+      ok: false,
+      code: "database_function_missing",
+      message:
+        "The online move commit function is missing. Run `supabase db push` before playing online.",
+    };
+  }
+
+  if (maybeError?.code === "42501") {
+    return {
+      ok: false,
+      code: "database_permission_denied",
+      message:
+        "The Edge Function could not access the online tables. Re-run `supabase db push` to apply grants.",
+    };
+  }
+
+  return {
+    ok: false,
+    code: "server_error",
+    message: maybeError?.message ?? fallbackMessage,
+  };
+}

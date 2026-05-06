@@ -10,7 +10,7 @@ export const COPY = {
     language: "ဘာသာစကား",
     intro: {
       kicker: "ရိုးရာကစားပွဲ",
-      title: "မြန်မာကျားထိုး",
+      title: "မြန်မာ့ကျားကွက်",
     },
     settings: {
       title: "ဆက်တင်များ",
@@ -18,11 +18,12 @@ export const COPY = {
       back: "ပြန်သွားရန်",
       languageTitle: "ဘာသာစကား",
       languageDetail: "အက်ပ်တွင် ပြသမည့်ဘာသာစကားကို ရွေးပါ။",
-      rulesDetail: "မြန်မာကျားထိုး၏ အခြေခံကစားနည်းများ",
+      rulesDetail: "မြန်မာကျားကွက်၏ အခြေခံကစားနည်းများ",
       aiTitle: "AI အဆင့်",
       aiDetail: "တစ်ယောက်တည်းကစားရာတွင် အသုံးပြုမည့် AI အဆင့်",
       modesTitle: "ကစားနည်းများ",
-      modesDetail: "တစ်ယောက်တည်း၊ နှစ်ယောက်ကစားနှင့် အွန်လိုင်းကစားပွဲများကို ရွေးချယ်နိုင်သည်။",
+      modesDetail:
+        "တစ်ယောက်တည်း၊ နှစ်ယောက်ကစားနှင့် အွန်လိုင်းကစားပွဲများကို ရွေးချယ်နိုင်သည်။",
       onlineTitle: "အွန်လိုင်းကစားပွဲ",
       onlineDetail: "အခန်းကုဒ်ဖြင့် အဝေးကစားသမားနှင့် ချိတ်ဆက်နိုင်သည်။",
     },
@@ -63,13 +64,16 @@ export const COPY = {
       hard: "ခက်",
     },
     game: {
-      menu: "မီနူး",
+      menu: "Menu",
       matchState: "ကစားပွဲအခြေအနေ",
       room: "အခန်း",
       connected: "ချိတ်ဆက်ပြီး",
       online: "အွန်လိုင်း",
       winnerLocal: (player) =>
         `${player} က စားပွဲကို ထိန်းချုပ်နိုင်ပြီ။ အသစ်စရန် ဒီနေရာကို နှိပ်ပါ။`,
+      drawAccepted: "သရေဖြစ်ပါသည်။ အသစ်စရန် ဒီနေရာကို နှိပ်ပါ။",
+      drawRequested: (player, opponent) =>
+        `${player} က သရေတောင်းထားသည်။ ${opponent} က သရေခလုတ်နှိပ်ပါက လက်ခံမည်။`,
       aiThinking: (player, difficulty) =>
         `${player} က ${difficulty} အဆင့် ရွှေ့ကွက်ကို စဉ်းစားနေသည်။`,
       continueCapture: (player) =>
@@ -79,13 +83,35 @@ export const COPY = {
       submittingMove: "အခန်းသို့ ရွှေ့ကွက် ပို့နေသည်။",
       waitingRoom: (roomCode, player) =>
         `အခန်း ${roomCode} သည် ${player} ဝင်လာရန် စောင့်နေသည်။`,
-      winnerOnline: (player) => `${player} က အွန်လိုင်းစားပွဲကို ထိန်းချုပ်နိုင်ပြီ။`,
+      winnerOnline: (player) =>
+        `${player} က အွန်လိုင်းစားပွဲကို ထိန်းချုပ်နိုင်ပြီ။`,
       waitingMove: (player) => `${player} ရွှေ့ရန် စောင့်နေသည်။`,
       waitingSecondPlayer: "ဒုတိယကစားသမား ဝင်လာရန် စောင့်နေသည်။",
       exitTitle: "ကစားပွဲမှ ထွက်မလား?",
       exitMessage: "အတည်ပြုပါက လက်ရှိကစားပွဲမှ ထွက်ပြီး မီနူးသို့ ပြန်သွားမည်။",
       exitCancel: "မထွက်ပါ",
       exitConfirm: "ထွက်မည်",
+      opponentLeftTitle: "ပြိုင်ဘက် ထွက်သွားပါပြီ",
+      opponentLeftMessage: (player) =>
+        `${player} သည် အွန်လိုင်းကစားပွဲမှ ထွက်သွားပါပြီ။ မီနူးသို့ ပြန်သွားရန် အတည်ပြုပါ။`,
+      opponentLeftConfirm: "မီနူးသို့ ပြန်သွားမည်",
+      resign: "အရှုံးပေး",
+      requestDraw: "သရေတောင်း",
+      acceptDraw: "သရေလက်ခံ",
+      drawPending: "စောင့်နေ",
+      confirmResignTitle: "အရှုံးပေးမလား?",
+      confirmResignMessage: (player, opponent) =>
+        `${player} အရှုံးပေးပါက ${opponent} အနိုင်ရမည်။`,
+      confirmResign: "အရှုံးပေးမည်",
+      confirmDrawTitle: "သရေတောင်းမလား?",
+      confirmDrawMessage: (player) => `${player} သည် သရေတောင်းရန် အတည်ပြုရမည်။`,
+      confirmDraw: "သရေတောင်းမည်",
+      confirmAcceptDrawTitle: "သရေလက်ခံမလား?",
+      confirmAcceptDrawMessage: (player) =>
+        `${player} သည် သရေတောင်းဆိုမှုကို လက်ခံရန် အတည်ပြုရမည်။`,
+      confirmAcceptDraw: "သရေလက်ခံမည်",
+      drawTitle: "သရေဖြစ်ပါသည်",
+      drawMessage: "သရေတောင်းဆိုမှုကို လက်ခံပြီး ကစားပွဲပြီးဆုံးပါသည်။",
       congratsTitle: "ဂုဏ်ယူပါတယ်!",
       congratsMessage: (player) => `${player} အနိုင်ရရှိပါသည်။`,
       congratsClose: "ပိတ်ရန်",
@@ -134,7 +160,8 @@ export const COPY = {
       aiTitle: "AI difficulty",
       aiDetail: "Difficulty used for single-player matches.",
       modesTitle: "Game modes",
-      modesDetail: "Choose single player, local two-player, or online multiplayer.",
+      modesDetail:
+        "Choose single player, local two-player, or online multiplayer.",
       onlineTitle: "Online play",
       onlineDetail: "Use room codes to connect with a remote player.",
     },
@@ -182,6 +209,9 @@ export const COPY = {
       online: "online",
       winnerLocal: (player) =>
         `${player} controls the table. Tap here for a new match.`,
+      drawAccepted: "Draw agreed. Tap here for a new match.",
+      drawRequested: (player, opponent) =>
+        `${player} requested a draw. ${opponent} can press Draw to accept.`,
       aiThinking: (player, difficulty) =>
         `${player} is choosing a ${difficulty.toLowerCase()} move.`,
       continueCapture: (player) => `${player} must continue the capture chain.`,
@@ -198,6 +228,28 @@ export const COPY = {
         "If you confirm, the current match will close and you will return to the menu.",
       exitCancel: "Cancel",
       exitConfirm: "Exit",
+      opponentLeftTitle: "Opponent left",
+      opponentLeftMessage: (player) =>
+        `${player} left the online match. Confirm to return to the menu.`,
+      opponentLeftConfirm: "Return to menu",
+      resign: "Resign",
+      requestDraw: "Draw",
+      acceptDraw: "Accept",
+      drawPending: "Waiting",
+      confirmResignTitle: "Resign match?",
+      confirmResignMessage: (player, opponent) =>
+        `${player} will resign and ${opponent} will win.`,
+      confirmResign: "Resign",
+      confirmDrawTitle: "Request draw?",
+      confirmDrawMessage: (player) =>
+        `${player} must confirm this draw request.`,
+      confirmDraw: "Request draw",
+      confirmAcceptDrawTitle: "Accept draw?",
+      confirmAcceptDrawMessage: (player) =>
+        `${player} must confirm accepting the draw request.`,
+      confirmAcceptDraw: "Accept draw",
+      drawTitle: "Draw agreed",
+      drawMessage: "The draw request was accepted and the match is complete.",
       congratsTitle: "Congratulations!",
       congratsMessage: (player) => `${player} wins the match.`,
       congratsClose: "Close",

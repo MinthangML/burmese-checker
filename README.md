@@ -44,10 +44,10 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-or-publishable-key
 ```bash
 supabase link --project-ref your-project-ref
 supabase db push
-supabase functions deploy create-match
-supabase functions deploy join-match
-supabase functions deploy get-match
-supabase functions deploy submit-move
+supabase functions deploy create-match --no-verify-jwt
+supabase functions deploy join-match --no-verify-jwt
+supabase functions deploy get-match --no-verify-jwt
+supabase functions deploy submit-move --no-verify-jwt
 ```
 
 Online matches use guest player tokens stored on the device. Clients call Edge Functions only; direct table access is blocked by RLS.

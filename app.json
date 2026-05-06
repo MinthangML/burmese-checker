@@ -1,14 +1,21 @@
 {
   "expo": {
-    "name": "Burmese Checker",
+    "name": "မြန်မာ့ကျားကွက်",
     "slug": "burmese-checker",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/app-icon.png",
     "userInterfaceStyle": "light",
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "plugins": [
+      "expo-router",
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-3940256099942544~3347511713",
+          "iosAppId": "ca-app-pub-3940256099942544~1458002511"
+        }
+      ],
       [
         "expo-navigation-bar",
         {
@@ -19,7 +26,14 @@
       ]
     ],
     "android": {
-      "package": "com.minthangml.burmesechecker"
+      "package": "com.minthangml.burmesechecker",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/app-icon.png",
+        "backgroundColor": "#120d0a"
+      }
+    },
+    "web": {
+      "favicon": "./assets/app-icon.png"
     }
   }
 }

@@ -1,6 +1,11 @@
 import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
-import { hasSupabaseConfig, supabase } from "./supabaseClient";
+import {
+  SUPABASE_ANON_KEY,
+  SUPABASE_URL,
+  hasSupabaseConfig,
+  supabase,
+} from "./supabaseClient";
 
 const ONLINE_SESSION_KEY = "burmese-checker-online-session-v1";
 
@@ -35,23 +40,65 @@ function buildSession(data, currentSession = null) {
 async function invokeMatchFunction(functionName, body) {
   assertSupabaseConfig();
 
-  const { data, error } = await supabase.functions.invoke(functionName, {
-    body,
-  });
+  let response;
+  let payload = null;
+  let responseText = "";
 
-  if (error) {
-    throw new OnlineMatchError(error.message, "function_error", error);
-  }
-
-  if (!data?.ok) {
+  try {
+    response = await fetch(`${SUPABASE_URL}/functions/v1/${functionName}`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body ?? {}),
+    });
+    responseText = await response.text();
+  } catch (error) {
     throw new OnlineMatchError(
-      data?.message ?? "Online match request failed.",
-      data?.code ?? "online_error",
-      data
+      formatNetworkError(error),
+      "network_error",
+      error
     );
   }
 
-  return data;
+  if (responseText) {
+    try {
+      payload = JSON.parse(responseText);
+    } catch {
+      payload = null;
+    }
+  }
+
+  if (!response.ok) {
+    throw new OnlineMatchError(
+      payload?.message ??
+        responseText ??
+        `Online backend returned HTTP ${response.status}.`,
+      payload?.code ?? `http_${response.status}`,
+      {
+        status: response.status,
+        body: payload ?? responseText,
+      }
+    );
+  }
+
+  if (!payload?.ok) {
+    throw new OnlineMatchError(
+      payload?.message ?? "Online match request failed.",
+      payload?.code ?? "online_error",
+      payload
+    );
+  }
+
+  return payload;
+}
+
+function formatNetworkError(error) {
+  return error?.message
+    ? `Could not reach the online backend: ${error.message}`
+    : "Could not reach the online backend.";
 }
 
 function getWebStorage() {

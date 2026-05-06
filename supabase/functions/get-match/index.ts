@@ -1,4 +1,8 @@
-import { handleOptions, jsonResponse } from "../_shared/cors.ts";
+import {
+  handleOptions,
+  jsonResponse,
+  setupAwareError,
+} from "../_shared/cors.ts";
 import {
   getMatchById,
   getPlayerColor,
@@ -43,11 +47,7 @@ Deno.serve(async (request) => {
     });
   } catch (error) {
     return jsonResponse(
-      {
-        ok: false,
-        code: "server_error",
-        message: error instanceof Error ? error.message : "Get match failed.",
-      },
+      setupAwareError(error, "Get match failed."),
       500
     );
   }

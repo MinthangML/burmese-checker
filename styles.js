@@ -14,7 +14,8 @@ export function getBurmeseTextStyle(style, isBurmese, fontsLoaded) {
   const weight = flattenedStyle?.fontWeight;
   const numericWeight = Number(weight);
   const isBold =
-    weight === "bold" || (Number.isFinite(numericWeight) && numericWeight >= 700);
+    weight === "bold" ||
+    (Number.isFinite(numericWeight) && numericWeight >= 700);
 
   return [
     style,
@@ -64,6 +65,45 @@ export const PLAYER_THEME = {
 
 export const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: SURFACE.background },
+  gameScreen: {
+    flex: 1,
+    overflow: "hidden",
+    backgroundColor: SURFACE.background,
+  },
+  splashScreen: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: SURFACE.background,
+  },
+  splashContent: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 18,
+    paddingHorizontal: 28,
+  },
+  splashIconFrame: {
+    width: 144,
+    height: 144,
+    overflow: "hidden",
+    borderRadius: 32,
+    borderWidth: 1,
+    borderColor: "rgba(234,210,162,0.44)",
+    backgroundColor: SURFACE.shell,
+  },
+  splashIcon: {
+    width: "100%",
+    height: "100%",
+  },
+  splashTitle: {
+    width: "100%",
+    color: SURFACE.text,
+    fontSize: 34,
+    lineHeight: 44,
+    fontWeight: "900",
+    textAlign: "center",
+  },
   backdropOrb: { position: "absolute", borderRadius: 999, opacity: 0.52 },
   backdropOrbLeft: {
     width: 260,
@@ -112,7 +152,8 @@ export const styles = StyleSheet.create({
     width: "100%",
     color: SURFACE.text,
     fontSize: 42,
-    lineHeight: 46,
+    lineHeight: 60,
+    fontWeight: "500",
     textAlign: "center",
     fontFamily: Platform.select({
       ios: "Georgia",
@@ -244,6 +285,28 @@ export const styles = StyleSheet.create({
   },
   menuBlock: {
     gap: 12,
+  },
+  mainMenuAdBanner: {
+    marginTop: 16,
+  },
+  adBannerSlot: {
+    width: "100%",
+    minHeight: 52,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  adBannerWebFallback: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(234,210,162,0.22)",
+    backgroundColor: "rgba(234,210,162,0.08)",
+  },
+  adBannerLabel: {
+    color: SURFACE.muted,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "800",
   },
   introMenuArea: {
     width: "100%",
@@ -643,6 +706,50 @@ export const styles = StyleSheet.create({
   },
   statusDot: { width: 10, height: 10, borderRadius: 5, marginRight: 10 },
   statusPillText: { flex: 1, fontSize: 15, lineHeight: 22, fontWeight: "600" },
+  matchActionRow: {
+    width: "100%",
+    flexDirection: "row",
+    gap: 6,
+  },
+  matchActionRowStatus: {
+    width: "100%",
+    maxWidth: 260,
+    marginTop: 8,
+    gap: 8,
+  },
+  matchActionRowRotated: {
+    transform: [{ rotate: "180deg" }],
+  },
+  statusIconButton: {
+    flex: 1,
+    minHeight: 36,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(234,210,162,0.3)",
+    backgroundColor: "rgba(28,19,13,0.72)",
+  },
+  statusIconButtonPending: {
+    borderColor: SURFACE.button,
+    backgroundColor: "rgba(234,210,162,0.14)",
+  },
+  statusIconButtonIcon: {
+    color: SURFACE.button,
+    fontSize: 16,
+    lineHeight: 18,
+    fontWeight: "900",
+  },
+  statusIconButtonText: {
+    color: SURFACE.text,
+    fontSize: 12,
+    lineHeight: 15,
+    fontWeight: "900",
+  },
   playersGrid: { marginBottom: 24 },
   playersGridWide: {
     flexDirection: "row",
@@ -656,11 +763,22 @@ export const styles = StyleSheet.create({
     borderRadius: 22,
     backgroundColor: "rgba(255,255,255,0.03)",
   },
+  playerStripCompact: {
+    minHeight: 56,
+    paddingVertical: 9,
+    paddingHorizontal: 10,
+    borderRadius: 16,
+    backgroundColor: "rgba(28,19,13,0.78)",
+  },
   playerStripHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
     marginBottom: 12,
+  },
+  playerStripHeaderCompact: {
+    alignItems: "center",
+    marginBottom: 0,
   },
   playerIdentity: {
     flexDirection: "row",
@@ -668,16 +786,48 @@ export const styles = StyleSheet.create({
     flexShrink: 1,
   },
   playerPulse: { width: 12, height: 12, borderRadius: 6, marginRight: 10 },
+  playerPulseCompact: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 7,
+  },
   playerSeat: { color: SURFACE.muted, fontSize: 12, marginBottom: 2 },
   playerName: { fontSize: 26, lineHeight: 30, fontWeight: "700" },
+  playerNameCompact: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: "900",
+  },
+  playerCompactState: {
+    color: SURFACE.muted,
+    fontSize: 10,
+    lineHeight: 13,
+    fontWeight: "800",
+  },
   playerCount: { alignItems: "flex-end", marginLeft: 16 },
+  playerCountCompact: {
+    minWidth: 32,
+    marginLeft: 8,
+  },
   playerCountValue: {
     color: SURFACE.text,
     fontSize: 28,
     lineHeight: 30,
     fontWeight: "700",
   },
+  playerCountValueCompact: {
+    fontSize: 20,
+    lineHeight: 22,
+    fontWeight: "900",
+    fontVariant: ["tabular-nums"],
+  },
   playerCountLabel: { color: SURFACE.muted, fontSize: 12, marginTop: 2 },
+  playerCountLabelCompact: {
+    fontSize: 9,
+    lineHeight: 11,
+    marginTop: 0,
+  },
   trackRow: { flexDirection: "row", marginBottom: 10 },
   trackSegment: {
     flex: 1,
@@ -696,12 +846,20 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  gameFloatingTop: {
+    position: "absolute",
+    top: 12,
+    left: 0,
+    right: 0,
+    zIndex: 14,
+    alignItems: "center",
+    paddingHorizontal: 12,
+  },
   gameTopBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
-    marginBottom: 12,
   },
   backButton: {
     minHeight: 42,
@@ -755,14 +913,57 @@ export const styles = StyleSheet.create({
   stateCluster: {
     width: "100%",
     alignItems: "center",
-    marginBottom: 14,
   },
   stateLabel: {
     color: SURFACE.muted,
     fontSize: 11,
     letterSpacing: 2.4,
     textTransform: "uppercase",
-    marginBottom: 10,
+    marginBottom: 7,
+  },
+  gameFloatingStatus: {
+    position: "absolute",
+    top: 66,
+    left: 0,
+    right: 0,
+    zIndex: 9,
+    alignItems: "center",
+    paddingHorizontal: 12,
+  },
+  gameCenterStage: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 16,
+  },
+  gameBoardWithAd: {
+    alignItems: "center",
+    gap: 10,
+  },
+  gameBoardAdBanner: {
+    width: "100%",
+    maxWidth: 360,
+  },
+  gamePlayerDock: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 14,
+    zIndex: 12,
+    alignItems: "center",
+    paddingHorizontal: 12,
+    gap: 8,
+  },
+  gameBottomActionSlot: {
+    alignItems: "center",
+  },
+  gamePlayerDockInner: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  playerDockItem: {
+    flex: 1,
+    gap: 6,
   },
   confirmOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -942,9 +1143,17 @@ export const styles = StyleSheet.create({
     elevation: 10,
   },
   boardFrame: { padding: 10, borderRadius: 22, backgroundColor: SURFACE.frame },
-  board: { borderRadius: 16, overflow: "hidden", flexDirection: "row", flexWrap: "wrap" },
+  board: {
+    borderRadius: 16,
+    overflow: "hidden",
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
   tile: { alignItems: "center", justifyContent: "center" },
-  tileTint: { ...StyleSheet.absoluteFillObject, backgroundColor: SURFACE.tileTint },
+  tileTint: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: SURFACE.tileTint,
+  },
   selectionHalo: { ...StyleSheet.absoluteFillObject, borderWidth: 2 },
   captureSourceHalo: { ...StyleSheet.absoluteFillObject, borderWidth: 1.5 },
   forcedHalo: {
@@ -1029,7 +1238,12 @@ export const styles = StyleSheet.create({
     textTransform: "uppercase",
     marginBottom: 6,
   },
-  footerBody: { color: SURFACE.text, fontSize: 15, lineHeight: 23, maxWidth: 520 },
+  footerBody: {
+    color: SURFACE.text,
+    fontSize: 15,
+    lineHeight: 23,
+    maxWidth: 520,
+  },
   actionButton: {
     backgroundColor: SURFACE.button,
     borderRadius: 999,

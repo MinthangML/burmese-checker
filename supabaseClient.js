@@ -3,7 +3,10 @@ import { createClient } from "@supabase/supabase-js";
 
 const env = typeof process !== "undefined" ? process.env : {};
 
-export const SUPABASE_URL = env.EXPO_PUBLIC_SUPABASE_URL ?? "";
+export const SUPABASE_URL = (env.EXPO_PUBLIC_SUPABASE_URL ?? "").replace(
+  /\/+$/,
+  ""
+);
 export const SUPABASE_ANON_KEY = env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";
 
 export const hasSupabaseConfig =

@@ -35,24 +35,19 @@ export default function OnlineLobbyScreen() {
       <StatusBar hidden style="light" animated />
       <ScreenBackdrop />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.introContent, { minHeight: height }]}
-      >
-        <View style={styles.introStage}>
-          <View style={styles.gameTopBar}>
-            <Pressable
-              onPress={goBackToMenu}
-              style={({ pressed }) => [
-                styles.backButton,
-                pressed && styles.actionButtonPressed,
-              ]}
-            >
-              <AppIcon name="chevron-back" style={styles.backButtonIcon} />
-              <AppText style={styles.backButtonText}>{copy.game.menu}</AppText>
-            </Pressable>
+      <View style={[styles.gameFloatingTop, styles.gameTopBar]}>
+        <Pressable
+          onPress={goBackToMenu}
+          style={({ pressed }) => [
+            styles.backButton,
+            pressed && styles.actionButtonPressed,
+          ]}
+        >
+          <AppIcon name="chevron-back" style={styles.backButtonIcon} />
+          <AppText style={styles.backButtonText}>{copy.game.menu}</AppText>
+        </Pressable>
 
-            <View style={styles.modeBadge}>
+        {/* <View style={styles.modeBadge}>
               <AppIcon
                 icon={onlineMode?.icon ?? ONLINE_MODE.icon}
                 style={styles.modeBadgeIcon}
@@ -60,13 +55,20 @@ export default function OnlineLobbyScreen() {
               <AppText style={styles.modeBadgeText}>
                 {copy.menu.online.label}
               </AppText>
-            </View>
+            </View> */}
 
-            <SettingsButton showLabel={false} />
-          </View>
+        <SettingsButton showLabel={false} />
+      </View>
 
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.introContent, { minHeight: height }]}
+      >
+        <View style={styles.introStage}>
           <View style={styles.header}>
-            <AppText style={[styles.kicker, isBurmese && styles.burmeseEyebrow]}>
+            <AppText
+              style={[styles.kicker, isBurmese && styles.burmeseEyebrow]}
+            >
               {copy.onlineLobby.kicker}
             </AppText>
             <AppText style={styles.title}>{copy.onlineLobby.title}</AppText>
@@ -131,7 +133,9 @@ export default function OnlineLobbyScreen() {
               <View style={styles.onlineJoinRow}>
                 <TextInput
                   value={joinCode}
-                  onChangeText={(value) => setJoinCode(normalizeRoomCode(value))}
+                  onChangeText={(value) =>
+                    setJoinCode(normalizeRoomCode(value))
+                  }
                   autoCapitalize="characters"
                   autoCorrect={false}
                   maxLength={6}

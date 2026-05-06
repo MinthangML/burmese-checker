@@ -37,6 +37,7 @@ import {
   normalizeRoomCode,
   saveOnlineSession,
   subscribeToOnlineMatch,
+  submitOnlineMatchAction,
   submitOnlineMove,
 } from "../../online";
 import { PLAYER_THEME, SURFACE } from "../../styles";
@@ -169,10 +170,15 @@ export function GameProvider({ children }) {
   const onlineMode = menuOptions.find((option) => option.key === "online");
   const getPlayerLabel = (player) =>
     playerThemes[player]?.label ?? copy.players.fallback;
+  const isSinglePlayer = matchMode.key === "single";
+  const isOnline = matchMode.key === "online";
+  const isLocalTwoPlayer = matchMode.key === "two-player";
 
   const isWide = width >= 900;
   const boardWidthLimit = isWide ? Math.min(width * 0.58, 680) : width - 80;
-  const boardHeightLimit = height - (isWide ? 260 : 300);
+  const localTwoPlayerTopControlsHeight = isLocalTwoPlayer ? 44 : 0;
+  const boardHeightLimit =
+    height - (isWide ? 260 : 300) - localTwoPlayerTopControlsHeight;
   const boardSize = Math.max(230, Math.min(boardWidthLimit, boardHeightLimit));
   const seatWidth = Math.min(width - 24, boardSize + 48);
   const tileSize = boardSize / 8;
@@ -305,7 +311,11 @@ export function GameProvider({ children }) {
   }, [boardIntro, screen]);
 
   useEffect(() => {
-    if (screen !== "game" || !winner) {
+    if (
+      screen !== "game" ||
+      !winner ||
+      isConfirmedOnlineMatchAction(onlineMatchState, matchMode)
+    ) {
       return;
     }
 
@@ -336,7 +346,30 @@ export function GameProvider({ children }) {
     if (Date.now() - lastWinSoundAtRef.current > WIN_SOUND_DEDUPE_MS) {
       playMoveSound(MOVE_SOUND.WIN);
     }
-  }, [screen, winner, confettiAnimations]);
+  }, [
+    screen,
+    winner,
+    confettiAnimations,
+    matchMode,
+    onlineMatchState?.status,
+    onlineMatchState?.finishedReason,
+  ]);
+
+  useEffect(() => {
+    if (
+      screen === "game" &&
+      drawAccepted &&
+      !isConfirmedOnlineMatchAction(onlineMatchState, matchMode)
+    ) {
+      setDrawDialogVisible(true);
+    }
+  }, [
+    screen,
+    drawAccepted,
+    matchMode,
+    onlineMatchState?.status,
+    onlineMatchState?.finishedReason,
+  ]);
 
   useEffect(() => {
     if (screen !== "game") {
@@ -392,8 +425,6 @@ export function GameProvider({ children }) {
   );
 
   const currentTheme = playerThemes[currentPlayer];
-  const isSinglePlayer = matchMode.key === "single";
-  const isOnline = matchMode.key === "online";
   const isAiTurn =
     screen === "game" &&
     isSinglePlayer &&
@@ -411,7 +442,10 @@ export function GameProvider({ children }) {
     : copy.players.fallback;
   const isOnlineActive = isOnline && onlineMatchState?.status === "active";
   const isOnlineMyTurn =
-    isOnlineActive && onlineSession?.color === currentPlayer && !winner;
+    isOnlineActive &&
+    onlineSession?.color === currentPlayer &&
+    !winner &&
+    !drawAccepted;
   const isBoardFlipped = isOnline && onlineSession?.color === PLAYERS.BLUE;
   const statusColor =
     isOnline && onlineError
@@ -422,6 +456,24 @@ export function GameProvider({ children }) {
       ? playerThemes[winner].accent
       : currentTheme.accent;
   const winnerTheme = winner ? playerThemes[winner] : null;
+
+  useEffect(() => {
+    if (
+      screen !== "game" ||
+      !isOnline ||
+      !isConfirmedOnlineMatchAction(onlineMatchState, matchMode)
+    ) {
+      return;
+    }
+
+    leaveFinishedOnlineActionMatch();
+  }, [
+    screen,
+    isOnline,
+    matchMode,
+    onlineMatchState?.status,
+    onlineMatchState?.finishedReason,
+  ]);
 
   useEffect(() => {
     let mounted = true;
@@ -582,9 +634,21 @@ export function GameProvider({ children }) {
     setCurrentPlayer(state.currentPlayer ?? PLAYERS.RED);
     setForcedPiece(state.forcedPiece ?? null);
     setWinner(state.winner ?? null);
-    setDrawAccepted(false);
-    setDrawRequestPlayer(null);
-    setDrawDialogVisible(false);
+    const onlineDrawAccepted =
+      state.status === "finished" && state.result === "draw";
+    setDrawAccepted(onlineDrawAccepted);
+    setDrawRequestPlayer(
+      onlineDrawAccepted ? null : state.drawOfferPlayer ?? null
+    );
+    if (
+      onlineDrawAccepted &&
+      screen === "game" &&
+      !isConfirmedOnlineMatchAction(state, matchMode)
+    ) {
+      setDrawDialogVisible(true);
+    } else {
+      setDrawDialogVisible(false);
+    }
     setLocalActionConfirm(null);
     setSelected(null);
     setLegalMoves([]);
@@ -623,6 +687,23 @@ export function GameProvider({ children }) {
     resetGame();
     resetOnlineRuntime();
     navigateToScreen("intro", { replace: true });
+  }
+
+  function isConfirmedOnlineMatchAction(state, mode = matchMode) {
+    if (mode.key !== "online" || state?.status !== "finished") {
+      return false;
+    }
+
+    return (
+      state.finishedReason === "resignation" ||
+      state.finishedReason === "draw_agreement"
+    );
+  }
+
+  function leaveFinishedOnlineActionMatch() {
+    clearSavedOnlineSession().catch(() => {});
+    setSavedOnlineSession(null);
+    goBackToMenu();
   }
 
   function requestExitGame() {
@@ -699,7 +780,11 @@ export function GameProvider({ children }) {
   }
 
   function requestLocalActionConfirmation(type, player) {
-    if (isOnline || winner || drawAccepted) {
+    if (winner || drawAccepted) {
+      return;
+    }
+
+    if (isOnline && (!isOnlineActive || player !== onlineSession?.color)) {
       return;
     }
 
@@ -718,6 +803,11 @@ export function GameProvider({ children }) {
     }
 
     setLocalActionConfirm(null);
+
+    if (isOnline) {
+      submitOnlineAction(action.type);
+      return;
+    }
 
     if (action.type === "resign") {
       resignLocalMatch(action.player);
@@ -949,7 +1039,44 @@ export function GameProvider({ children }) {
         applyOnlineState(error.data.state);
       }
 
-      setOnlineError(formatOnlineError(error, copy));
+      setOnlineError(
+        error.data?.state?.status === "finished"
+          ? ""
+          : formatOnlineError(error, copy)
+      );
+    } finally {
+      setOnlineSubmitting(false);
+    }
+  }
+
+  async function submitOnlineAction(actionType) {
+    if (!onlineSession || !onlineMatchState || onlineSubmitting) {
+      return;
+    }
+
+    setOnlineSubmitting(true);
+    setOnlineError("");
+
+    try {
+      const result = await submitOnlineMatchAction(
+        onlineSession,
+        onlineMatchState,
+        actionType
+      );
+      setOnlineSession(result.session);
+      await saveOnlineSession(result.session);
+      setSavedOnlineSession(result.session);
+      applyOnlineState(result.state);
+    } catch (error) {
+      if (error.data?.state) {
+        applyOnlineState(error.data.state);
+      }
+
+      setOnlineError(
+        error.data?.state?.status === "finished"
+          ? ""
+          : formatOnlineError(error, copy)
+      );
     } finally {
       setOnlineSubmitting(false);
     }
@@ -1060,8 +1187,15 @@ export function GameProvider({ children }) {
     ? copy.game.submittingMove
     : onlineMatchState?.status === "waiting"
     ? copy.game.waitingRoom(onlineRoomCode, getPlayerLabel(PLAYERS.BLUE))
+    : drawAccepted
+    ? copy.game.drawAccepted
     : winner
     ? copy.game.winnerOnline(getPlayerLabel(winner))
+    : drawRequestPlayer
+    ? copy.game.drawRequested(
+        getPlayerLabel(drawRequestPlayer),
+        getPlayerLabel(getOpponent(drawRequestPlayer))
+      )
     : isOnlineMyTurn
     ? forcedPiece
       ? copy.game.continueCapture(getPlayerLabel(currentPlayer))
@@ -1143,6 +1277,7 @@ export function GameProvider({ children }) {
     isBurmese,
     isBoardFlipped,
     isOnline,
+    isOnlineActive,
     isOnlineMyTurn,
     isSinglePlayer,
     joinCode,
@@ -1164,6 +1299,7 @@ export function GameProvider({ children }) {
     onlineOpponentLabel,
     onlineRoomCode,
     onlineSession,
+    onlineSubmitting,
     opponentLeftDialogVisible,
     openSettings,
     playerThemes,

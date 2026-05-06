@@ -219,6 +219,20 @@ export async function submitOnlineMove(session, state, move) {
   };
 }
 
+export async function submitOnlineMatchAction(session, state, action) {
+  const data = await invokeMatchFunction("submit-match-action", {
+    matchId: session.matchId,
+    playerToken: session.playerToken,
+    expectedMoveNumber: state?.moveNumber ?? 0,
+    action,
+  });
+
+  return {
+    session: buildSession(data, session),
+    state: data.state,
+  };
+}
+
 export function subscribeToOnlineMatch(
   session,
   { onState, onPresence, onStatus, onError }

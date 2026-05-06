@@ -48,6 +48,10 @@ supabase functions deploy create-match --no-verify-jwt
 supabase functions deploy join-match --no-verify-jwt
 supabase functions deploy get-match --no-verify-jwt
 supabase functions deploy submit-move --no-verify-jwt
+supabase functions deploy submit-match-action --no-verify-jwt
 ```
 
-Online matches use guest player tokens stored on the device. Clients call Edge Functions only; direct table access is blocked by RLS.
+Online matches use guest player tokens stored on the device. Moves, resignations,
+and draw offers are committed by Edge Functions and persisted on the `matches`
+row before Realtime broadcasts the shared state. Clients call Edge Functions
+only; direct table access is blocked by RLS.

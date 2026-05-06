@@ -14,7 +14,7 @@ function RootStack() {
     <Stack
       screenOptions={{
         headerShown: false,
-        animationTypeForReplace: "push",
+        animation: "fade",
       }}
     />
   );

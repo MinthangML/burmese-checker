@@ -6,7 +6,12 @@ import { useGame } from "../context/GameContext";
 import { AppText } from "./app-text";
 import { AppIcon } from "./app-icon";
 
-export function LocalMatchActions({ player, status = false, rotated = false }) {
+export function LocalMatchActions({
+  player,
+  disabled = false,
+  status = false,
+  rotated = false,
+}) {
   const {
     copy,
     drawAccepted,
@@ -15,7 +20,7 @@ export function LocalMatchActions({ player, status = false, rotated = false }) {
     requestLocalActionConfirmation,
     winner,
   } = useGame();
-  const isDisabled = Boolean(winner || drawAccepted);
+  const isDisabled = Boolean(disabled || winner || drawAccepted);
   const drawRequestedBySelf = drawRequestPlayer === player;
   const drawWillAccept = Boolean(drawRequestPlayer && drawRequestPlayer !== player);
   const drawButtonText = drawWillAccept

@@ -1,5 +1,5 @@
 import React from "react";
-import { Image, Pressable, ScrollView, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { styles } from "../../styles";
@@ -19,24 +19,15 @@ export default function MainScreen() {
     <SafeAreaView style={styles.screen}>
       <StatusBar hidden style="light" animated />
       <ScreenBackdrop />
-      <Image
-        accessibilityIgnoresInvertColors
-        blurRadius={14}
-        pointerEvents="none"
-        resizeMode="cover"
-        source={require("../../assets/myanmar-flag.png")}
-        style={styles.mainFlagBackground}
-      />
       <SettingsButton style={styles.introSettingsButton} showLabel={false} />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.introContent, { minHeight: height }]}
-      >
+      <View style={styles.introContent}>
         <View style={styles.introStage}>
           <View style={styles.introTopArea}>
             <View style={styles.header}>
-              <AppText style={[styles.kicker, isBurmese && styles.burmeseEyebrow]}>
+              <AppText
+                style={[styles.kicker, isBurmese && styles.burmeseEyebrow]}
+              >
                 {copy.intro.kicker}
               </AppText>
               <AppText style={styles.title}>{copy.intro.title}</AppText>
@@ -72,7 +63,7 @@ export default function MainScreen() {
             />
           </View>
         </View>
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }

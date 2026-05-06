@@ -1,5 +1,6 @@
 import React from "react";
 import { Animated, Pressable, View } from "react-native";
+import { PLAYERS } from "../../logic";
 import { styles } from "../../styles";
 import { CONFETTI_PIECES } from "../constants/game";
 import { useGame } from "../context/GameContext";
@@ -163,6 +164,7 @@ function LocalActionConfirmDialog() {
       confirmText={localActionConfirmButton}
       onCancel={cancelLocalActionConfirm}
       onConfirm={confirmLocalAction}
+      rotated={localActionConfirm.player === PLAYERS.BLUE}
     />
   );
 }

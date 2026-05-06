@@ -16,6 +16,9 @@ const TOKEN_BYTES = 32;
 const TOPIC_BYTES = 24;
 
 type Player = "red" | "blue";
+type MatchStatus = "waiting" | "active" | "finished";
+type MatchResult = "red_win" | "blue_win" | "draw" | null;
+type FinishedReason = "board" | "resignation" | "draw_agreement" | null;
 
 type Square = {
   row: number;
@@ -32,11 +35,14 @@ export type MatchRow = {
   id: string;
   room_code: string;
   realtime_topic: string;
-  status: "waiting" | "active" | "finished";
+  status: MatchStatus;
   board: unknown[][];
   current_player: Player;
   forced_piece: Square | null;
+  draw_offer_player: Player | null;
   winner: Player | null;
+  result: MatchResult;
+  finished_reason: FinishedReason;
   move_number: number;
   red_token_hash: string;
   blue_token_hash: string | null;
@@ -45,11 +51,14 @@ export type MatchRow = {
 export type SanitizedMatchState = {
   matchId: string;
   roomCode: string;
-  status: "waiting" | "active" | "finished";
+  status: MatchStatus;
   board: unknown[][];
   currentPlayer: Player;
   forcedPiece: Square | null;
+  drawOfferPlayer: Player | null;
   winner: Player | null;
+  result: MatchResult;
+  finishedReason: FinishedReason;
   moveNumber: number;
 };
 
@@ -118,7 +127,10 @@ export function sanitizeMatch(row: MatchRow): SanitizedMatchState {
     board: row.board,
     currentPlayer: row.current_player,
     forcedPiece: row.forced_piece,
+    drawOfferPlayer: row.draw_offer_player,
     winner: row.winner,
+    result: row.result,
+    finishedReason: row.finished_reason,
     moveNumber: row.move_number,
   };
 }
@@ -306,6 +318,97 @@ export function prepareMoveCommit(row: MatchRow, color: Player, expectedMoveNumb
       forcedPiece: nextForcedPiece,
       winner: nextWinner,
       status: nextStatus,
+    },
+  };
+}
+
+export function prepareMatchActionCommit(
+  row: MatchRow,
+  color: Player,
+  expectedMoveNumber: unknown,
+  action: unknown
+) {
+  if (row.status === "waiting") {
+    return {
+      ok: false,
+      code: "match_waiting",
+      message: "Waiting for the second player to join.",
+    };
+  }
+
+  if (row.status === "finished" || row.result) {
+    return {
+      ok: false,
+      code: "match_finished",
+      message: "This match is already finished.",
+    };
+  }
+
+  if (Number(expectedMoveNumber) !== row.move_number) {
+    return {
+      ok: false,
+      code: "action_conflict",
+      message: "Match state changed. Refreshing the board.",
+      state: sanitizeMatch(row),
+    };
+  }
+
+  if (action === "resign") {
+    const winner = getOpponent(color) as Player;
+
+    return {
+      ok: true,
+      update: {
+        currentPlayer: row.current_player,
+        drawOfferPlayer: null,
+        winner,
+        status: "finished" as MatchStatus,
+        result: `${winner}_win` as MatchResult,
+        finishedReason: "resignation" as FinishedReason,
+      },
+    };
+  }
+
+  if (action !== "draw") {
+    return {
+      ok: false,
+      code: "invalid_action",
+      message: "Match action is invalid.",
+    };
+  }
+
+  if (row.draw_offer_player === color) {
+    return {
+      ok: false,
+      code: "draw_already_requested",
+      message: "Your draw request is already waiting for the opponent.",
+      state: sanitizeMatch(row),
+    };
+  }
+
+  if (row.draw_offer_player === getOpponent(color)) {
+    return {
+      ok: true,
+      update: {
+        currentPlayer: row.current_player,
+        drawOfferPlayer: null,
+        winner: null,
+        status: "finished" as MatchStatus,
+        result: "draw" as MatchResult,
+        finishedReason: "draw_agreement" as FinishedReason,
+      },
+    };
+  }
+
+  return {
+    ok: true,
+    update: {
+      currentPlayer: row.current_player,
+      drawOfferPlayer: color,
+      winner: null,
+      status: "active" as MatchStatus,
+      result: null,
+      finishedReason: null,
     },
   };
 }

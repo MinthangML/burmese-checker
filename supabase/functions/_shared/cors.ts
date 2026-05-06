@@ -51,7 +51,7 @@ export function setupAwareError(error: unknown, fallbackMessage: string) {
       ok: false,
       code: "database_function_missing",
       message:
-        "The online move commit function is missing. Run `supabase db push` before playing online.",
+        "An online match database function is missing. Run `supabase db push` before playing online.",
     };
   }
 

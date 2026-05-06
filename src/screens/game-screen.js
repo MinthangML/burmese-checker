@@ -2,9 +2,10 @@ import React from "react";
 import { Animated, Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { getOpponent, PLAYERS } from "../../logic";
+import { PLAYERS } from "../../logic";
 import { styles } from "../../styles";
 import { AdMobBanner } from "../components/admob-banner";
+import { AdMobInterstitial } from "../components/admob-interstitial";
 import { AppIcon } from "../components/app-icon";
 import { AppText } from "../components/app-text";
 import { CheckerBoard } from "../components/checker-board";
@@ -15,6 +16,8 @@ import { ScreenBackdrop } from "../components/screen-backdrop";
 import { useGame } from "../context/GameContext";
 
 const GAME_BOARD_BANNER_AD_UNIT_ID = "ca-app-pub-8518084536991465/3226860373";
+const MULTIPLAYER_WIN_INTERSTITIAL_AD_UNIT_ID =
+  "ca-app-pub-8518084536991465/3257366104";
 
 export default function GameScreen() {
   const {
@@ -23,13 +26,13 @@ export default function GameScreen() {
     copy,
     currentPlayer,
     drawAccepted,
-    drawRequestPlayer,
     height,
     introScale,
     introTranslateY,
     isBurmese,
     isBoardFlipped,
     isOnline,
+    isOnlineActive,
     isSinglePlayer,
     matchLine,
     matchMode,
@@ -37,6 +40,8 @@ export default function GameScreen() {
     onlineConnectedPlayers,
     onlineConnection,
     onlineRoomCode,
+    onlineSession,
+    onlineSubmitting,
     playerThemes,
     pulseOpacity,
     pulseScale,
@@ -49,12 +54,24 @@ export default function GameScreen() {
   } = useGame();
   const topDockPlayer = isBoardFlipped ? PLAYERS.RED : PLAYERS.BLUE;
   const bottomDockPlayer = isBoardFlipped ? PLAYERS.BLUE : PLAYERS.RED;
-  const localActionPlayer = drawRequestPlayer
-    ? getOpponent(drawRequestPlayer)
-    : isSinglePlayer
-    ? PLAYERS.RED
-    : currentPlayer;
+  const isLocalTwoPlayer = !isOnline && !isSinglePlayer;
+  const localBottomActionPlayer = PLAYERS.RED;
+  const localGoldActionPlayer = PLAYERS.BLUE;
   const showLocalBottomActions = !isOnline && !winner && !drawAccepted;
+  const showLocalGoldTopActions = isLocalTwoPlayer && !winner && !drawAccepted;
+  const showOnlineBottomActions =
+    isOnline &&
+    onlineSession?.color &&
+    isOnlineActive &&
+    !winner &&
+    !drawAccepted &&
+    onlineConnection === "SUBSCRIBED";
+  const isLocalPlayerModeWin = isLocalTwoPlayer && Boolean(winner);
+  const isOnlineUserWin = isOnline && onlineSession?.color === winner;
+  const shouldShowWinInterstitial = isLocalPlayerModeWin || isOnlineUserWin;
+  const winInterstitialTriggerKey = shouldShowWinInterstitial
+    ? `${matchMode.key}:${winner}`
+    : null;
   const pieceCounts = {
     [PLAYERS.RED]: redPieces,
     [PLAYERS.BLUE]: bluePieces,
@@ -159,6 +176,11 @@ export default function GameScreen() {
           ]}
         >
           <View style={styles.gameBoardWithAd}>
+            {showLocalGoldTopActions ? (
+              <View style={[styles.gameBoardTopActionSlot, { width: seatWidth }]}>
+                <LocalMatchActions player={localGoldActionPlayer} status rotated />
+              </View>
+            ) : null}
             <CheckerBoard />
             <AdMobBanner
               placement="game-board"
@@ -172,7 +194,16 @@ export default function GameScreen() {
       <View style={styles.gamePlayerDock}>
         {showLocalBottomActions ? (
           <View style={[styles.gameBottomActionSlot, { width: seatWidth }]}>
-            <LocalMatchActions player={localActionPlayer} status />
+            <LocalMatchActions player={localBottomActionPlayer} status />
+          </View>
+        ) : null}
+        {showOnlineBottomActions ? (
+          <View style={[styles.gameBottomActionSlot, { width: seatWidth }]}>
+            <LocalMatchActions
+              player={onlineSession.color}
+              disabled={onlineSubmitting}
+              status
+            />
           </View>
         ) : null}
         <View style={[styles.gamePlayerDockInner, { width: seatWidth }]}>
@@ -182,6 +213,11 @@ export default function GameScreen() {
       </View>
 
       <GameDialogs height={height} />
+      <AdMobInterstitial
+        shouldShow={shouldShowWinInterstitial}
+        triggerKey={winInterstitialTriggerKey}
+        unitId={MULTIPLAYER_WIN_INTERSTITIAL_AD_UNIT_ID}
+      />
     </SafeAreaView>
   );
 }

@@ -10,10 +10,11 @@ export function ConfirmationDialog({
   confirmText,
   onCancel,
   onConfirm,
+  rotated = false,
 }) {
   return (
     <View style={styles.confirmOverlay}>
-      <View style={styles.confirmDialog}>
+      <View style={[styles.confirmDialog, rotated && styles.confirmDialogRotated]}>
         <AppText style={styles.confirmTitle}>{title}</AppText>
         <AppText style={styles.confirmMessage}>{message}</AppText>
 
